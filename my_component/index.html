@@ -5,133 +5,59 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Streamlit Component</title>
     <style>
-        /* --- CSS 样式直接写在这里 --- */
-        body {
-            font-family: sans-serif;
-            padding: 10px;
-            background-color: transparent;
+        body { font-family: sans-serif; padding: 1rem; background: transparent; }
+        .card { 
+            background: white; border: 1px solid #e0e0e0; 
+            border-radius: 0.5rem; padding: 1rem; 
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
         }
-        .card {
-            background: white;
-            border: 1px solid #ddd;
-            border-radius: 8px;
-            padding: 15px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
-        }
-        .status { font-size: 0.8em; color: #666; margin-bottom: 10px; }
-        .success { color: green; font-weight: bold; }
         button {
-            background-color: #ff4b4b;
-            color: white;
-            border: none;
-            padding: 8px 15px;
-            border-radius: 4px;
-            cursor: pointer;
-            margin-top: 10px;
+            background-color: #ff4b4b; color: white; border: none;
+            padding: 0.5rem 1rem; border-radius: 0.25rem; cursor: pointer;
         }
         button:hover { background-color: #ff2b2b; }
-        #debug { 
-            margin-top: 10px; 
-            font-family: monospace; 
-            font-size: 10px; 
-            color: #999; 
-            white-space: pre-wrap;
-        }
+        #debug { margin-top: 10px; font-size: 0.8rem; color: #666; font-family: monospace; }
+        .success { color: green; font-weight: bold; }
     </style>
 </head>
 <body>
     <div class="card">
-        <div class="status">状态: <span id="status-text">初始化中...</span></div>
-        <h3>Hello, <span id="name-display">...</span></h3>
-        <button id="btn">发送时间戳给 Python</button>
-        <div id="debug"></div>
+        <h3>👋 Hello, <span id="name-display">...</span></h3>
+        <button id="btn">发送数据到 Python</button>
+        <div id="debug">等待连接...</div>
     </div>
 
     <script>
-        // --- Streamlit 通信微内核 (Micro-Kernel) ---
-        const Streamlit = {
-            RENDER_EVENT: "streamlit:render",
-            events: {
-                addEventListener: function(type, callback) {
-                    window.addEventListener("message", function(event) {
-                        if (event.data.type === type) {
-                            event.detail = event.data; // 适配 Streamlit 标准
-                            callback(event);
-                        }
-                    });
-                }
-            },
-            setComponentValue: function(value) {
-                window.parent.postMessage({
-                    type: "streamlit:setComponentValue",
-                    value: value
-                }, "*");
-            },
-            setFrameHeight: function(height) {
-                // 如果没指定高度，则计算 body 高度
-                if (!height) {
-                    height = document.body.scrollHeight + 20; // 加一点余量
-                }
-                window.parent.postMessage({
-                    type: "streamlit:setFrameHeight",
-                    height: height
-                }, "*");
-            },
-            setComponentReady: function() {
-                window.parent.postMessage({
-                    type: "streamlit:componentReady",
-                    apiVersion: 1
-                }, "*");
-            }
-        };
+    (function(){var e="streamlit:componentReady",t="streamlit:render",n="streamlit:setComponentValue",i="streamlit:setFrameHeight";function o(e){var t=e.data,n=e.source;if(n===window.parent){var i=t.type;if("streamlit:render"===i){var o=t.args;window.Streamlit.onRender&&window.Streamlit.onRender(o)}}}function a(e){window.parent.postMessage(e,window.Streamlit.streamlitUrl)}window.Streamlit={streamlitUrl:null,onRender:null,setComponentReady:function(){a({type:e,apiVersion:1})},setComponentValue:function(e){a({type:n,value:e})},setFrameHeight:function(e){void 0===e&&(e=document.body.scrollHeight),a({type:i,height:e})}},function(){var e=window.location.search;if(e){var t=new URLSearchParams(e).get("streamlitUrl");t&&(window.Streamlit.streamlitUrl=t,window.addEventListener("message",o),window.Streamlit.setComponentReady())}}()})();
     </script>
 
     <script>
-        const statusText = document.getElementById("status-text");
         const nameDisplay = document.getElementById("name-display");
-        const btn = document.getElementById("btn");
         const debug = document.getElementById("debug");
+        const btn = document.getElementById("btn");
 
-        function log(msg) {
-            debug.textContent += `> ${msg}\n`;
-            console.log(msg);
-        }
-
-        // 1. 定义渲染函数
-        function onRender(event) {
-            try {
-                // 获取参数
-                const args = event.detail.args;
-                log(`收到数据: ${JSON.stringify(args)}`);
-
-                // 更新 UI
-                nameDisplay.textContent = args.name || "Unknown";
-                statusText.innerHTML = "<span class='success'>已连接</span>";
-
-                // 自动调整高度
-                Streamlit.setFrameHeight();
-            } catch (e) {
-                log(`渲染错误: ${e.message}`);
-            }
-        }
-
-        // 2. 绑定点击事件
-        btn.onclick = function() {
-            const val = "Clicked at " + new Date().toLocaleTimeString();
-            log(`发送: ${val}`);
-            Streamlit.setComponentValue(val);
+        // 1. 设置回调函数
+        window.Streamlit.onRender = function(args) {
+            // 接收 Python 传来的参数
+            const name = args.name || "World";
+            nameDisplay.textContent = name;
+            debug.innerHTML = `状态: <span class="success">已连接 (Token: ${Date.now()})</span>`;
+            
+            // 自动调整高度
+            window.Streamlit.setFrameHeight();
         };
 
-        // 3. 启动监听
-        Streamlit.events.addEventListener(Streamlit.RENDER_EVENT, onRender);
-
-        // 4. 通知 Python 前端已就绪
-        // 稍微延迟一点点确保 DOM 渲染完毕
-        setTimeout(() => {
-            Streamlit.setComponentReady();
-            Streamlit.setFrameHeight(200); // 先给一个初始高度
-            log("已发送 Ready 信号");
-        }, 100);
+        // 2. 绑定按钮事件
+        btn.onclick = function() {
+            const msg = `Clicked at ${new Date().toLocaleTimeString()}`;
+            debug.textContent = `正在发送: ${msg}`;
+            window.Streamlit.setComponentValue(msg);
+        };
+        
+        // 注意：官方库（上面的 minified script）会自动调用 setComponentReady()
+        // 所以这里不需要手动调用它，只需要定义 onRender 即可。
+        
+        debug.textContent = "脚本已加载，等待 Streamlit 握手...";
     </script>
 </body>
 </html>
