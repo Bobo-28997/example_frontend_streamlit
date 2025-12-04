@@ -3,7 +3,7 @@ from datetime import datetime
 
 # 导入简化组件
 try:
-    from simple_component import simple_component
+    from my_component import simple_component
     component_loaded = True
 except ImportError as e:
     st.error(f"❌ 组件加载失败: {str(e)}")
