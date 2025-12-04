@@ -37,66 +37,34 @@
         <div id="status" style="margin-top: 10px;"></div>
     </div>
 
-    <!-- 将脚本移到这里，确保DOM已加载 -->
+    <script src="https://cdn.streamlit.io/components/v1/iframeComponent.js"></script>
     <script>
-        // 自定义 Streamlit 对象
-        const Streamlit = {
-            setComponentValue: function(value) {
-                window.parent.postMessage({
-                    type: "streamlit:setComponentValue",
-                    value: value
-                }, "*");
-            },
-            setComponentReady: function() {
-                window.parent.postMessage({
-                    type: "streamlit:componentReady",
-                    apiVersion: 1
-                }, "*");
-            },
-            setFrameHeight: function(height) {
-                window.parent.postMessage({
-                    type: "streamlit:setFrameHeight",
-                    height: height
-                }, "*");
-            },
-            RENDER_EVENT: "streamlit:render",
-            events: {
-                addEventListener: function(type, callback) {
-                    window.addEventListener("message", function(event) {
-                        // 检查事件类型，并直接将 event.data 传递给回调函数
-                        if (event.data.type === type) {
-                            callback(event.data); 
-                        }
-                    });
-                }
-            }
-        };
-
-        // --- 业务逻辑 ---
-
-        function onRender(eventData) {
-            // 🚀 关键修改点：回调函数直接接收 eventData，并从中获取 args
-            const args = eventData.args; 
-            if (args && args.name) {
-                document.getElementById("name").textContent = args.name;
-            }
+        // 初始化组件
+        function onRender(event) {
+            // 获取从Python传递的参数
+            const { name } = event.detail.args;
+            
+            // 更新UI
+            document.getElementById("name").textContent = name || "World";
+            
             // 设置组件高度
             Streamlit.setFrameHeight(150);
         }
 
-        // 监听来自 Python 的消息
+        // 监听来自Python的消息
         Streamlit.events.addEventListener(Streamlit.RENDER_EVENT, onRender);
 
         // 按钮点击事件
         document.getElementById("send-button").addEventListener("click", function() {
             const message = "Hello from JavaScript! Time: " + new Date().toLocaleTimeString();
             document.getElementById("status").textContent = "已发送: " + message;
-            Streamlit.setComponentValue(message);
+            
+            // 发送值到Python
+            Streamlit.setComponentValue({ message: message });
         });
 
-        // 告诉 Python 我们准备好了
+        // 通知Streamlit组件已准备就绪
         Streamlit.setComponentReady();
-
     </script>
 </body>
 </html>
