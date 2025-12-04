@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Simple Component</title>
+    <style>
+        body { 
+            font-family: sans-serif; 
+            padding: 10px;
+            background-color: #f0f2f6;
+        }
+        .container {
+            background-color: white;
+            border-radius: 8px;
+            padding: 15px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h3>Hello <span id="name">World</span>!</h3>
+        <p>这是一个简单的测试组件</p>
+        <button id="send-button">发送消息到Python</button>
+        <div id="status" style="margin-top: 10px;"></div>
+    </div>
+
+    <!-- 将脚本移到这里，确保DOM已加载 -->
+    <script>
+        // 自定义 Streamlit 对象
+        const Streamlit = {
+            setComponentValue: function(value) {
+                window.parent.postMessage({
+                    type: "streamlit:setComponentValue",
+                    value: value
+                }, "*");
+            },
+            setComponentReady: function() {
+                window.parent.postMessage({
+                    type: "streamlit:componentReady",
+                    apiVersion: 1
+                }, "*");
+            },
+            setFrameHeight: function(height) {
+                window.parent.postMessage({
+                    type: "streamlit:setFrameHeight",
+                    height: height
+                }, "*");
+            },
+            RENDER_EVENT: "streamlit:render",
+            events: {
+                addEventListener: function(type, callback) {
+                    window.addEventListener("message", function(event) {
+                        // 检查事件类型，并直接将 event.data 传递给回调函数
+                        if (event.data.type === type) {
+                            callback(event.data); 
+                        }
+                    });
+                }
+            }
+        };
+
+        // --- 业务逻辑 ---
+
+        function onRender(eventData) {
+            // 🚀 关键修改点：回调函数直接接收 eventData，并从中获取 args
+            const args = eventData.args; 
+            if (args && args.name) {
+                document.getElementById("name").textContent = args.name;
+            }
+            // 设置组件高度
+            Streamlit.setFrameHeight(150);
+        }
+
+        // 监听来自 Python 的消息
+        Streamlit.events.addEventListener(Streamlit.RENDER_EVENT, onRender);
+
+        // 按钮点击事件
+        document.getElementById("send-button").addEventListener("click", function() {
+            const message = "Hello from JavaScript! Time: " + new Date().toLocaleTimeString();
+            document.getElementById("status").textContent = "已发送: " + message;
+            Streamlit.setComponentValue(message);
+        });
+
+        // 告诉 Python 我们准备好了
+        Streamlit.setComponentReady();
+
+    </script>
+</body>
+</html>
