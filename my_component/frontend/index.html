@@ -1,1 +1,32 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Streamlit Robust Component</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="card">
+        <div class="header">
+            <span class="status-dot" id="status-dot"></span>
+            <h3>组件状态: <span id="connection-status">初始化中...</span></h3>
+        </div>
+        
+        <div class="content">
+            <p>你好, <strong id="username" class="highlight">...</strong></p>
+            <p class="sub-text">前端已准备就绪。</p>
+        </div>
 
+        <div class="actions">
+            <button id="send-btn" disabled>📡 发送数据到 Python</button>
+            <button id="ping-btn" class="secondary">🔄 重置/Ping</button>
+        </div>
+        
+        <div id="log-area" class="logs"></div>
+    </div>
+
+    <script src="streamlit-component-lib.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
